@@ -31,10 +31,22 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract version from Dockerfile name
+        id: extract_version
+        run: |
+          version="${{ matrix.dockerfile }}"
+          version="${version#Dockerfile.}" # Remove "Dockerfile." prefix if it exists
+          lc_repo_name=${NORMAL_REPO,,}
+          echo "::set-output name=version::${version}"
+          echo "::set-output name=repo::${lc_repo_name}"
+        shell: bash
+        env:
+          NORMAL_REPO: '${{ github.repository }}'
+
       - name: Build and Publish
         uses: docker/build-push-action@v4
         with:
           file: Dockerfile.latest
           platforms: linux/arm64, linux/amd64
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest
+          tags: ghcr.io/${{ steps.extract_version.outputs.repo }}:latest
